@@ -12,7 +12,10 @@ variable "db_master_password" {
 }
 
 # Variables Lambda
-variable "docker_image" {
-  default = "dockerhub_user/repository_name:tag"
+variable "docker_image_pub" {
+  default = "guillevalin/publisher:latest"
 }
 
+variable "docker_image_sub" {
+  default = "guillevalin/subscriber:latest"
+}

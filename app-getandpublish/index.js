@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const AWS = require('aws-sdk');
 
 // Parámetros de configuración de la base de datos
 const dbConfig = {
@@ -9,13 +10,15 @@ const dbConfig = {
     port: 5432
 };
 
+const snsTopicArn = process.env.SNS_TOPIC_ARN; // ARN del tópico SNS que usaremos
+
 exports.handler = async (event) => {
+    const sns = new AWS.SNS();
     const client = new Pool(dbConfig);
 
     try {
-        await client.connect();
-
         if (event.httpMethod === "GET") {
+            await client.connect();
             const res = await client.query('SELECT * FROM users;');
             await client.end();
 
@@ -35,15 +38,29 @@ exports.handler = async (event) => {
                 };
             }
 
-            const insertQuery = 'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *';
-            const res = await client.query(insertQuery, [name, email]);
-            await client.end();
+            const message = JSON.stringify({
+                name: name,
+                email: email
+            });
 
-            return {
-                statusCode: 201,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: "Usuario insertado correctamente", user: res.rows[0] })
-            };
+            try {
+                await sns.publish({
+                    Message: message,
+                    TopicArn: snsTopicArn
+                }).promise();
+
+                return {
+                    statusCode: 201,
+                    body: JSON.stringify({ message: "Usuario publicado en el tópico SNS correctamente" })
+                };
+            } catch (error) {
+                console.error("Ha ocurrido un error al publicar en el tópico SNS: ", error);
+
+                return {
+                    statusCode: 500,
+                    body: JSON.stringify({ message: "Ha ocurrido un error inesperado al enviar la información." })
+                };
+            }
         } else {
             return {
                 statusCode: 405,
@@ -56,7 +73,7 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: "Ha ocurrido un error inesperado, por favor intentarlo nuevamente." })
+            body: JSON.stringify({ message: "Ha ocurrido un error inesperado." })
         };
     }
 };

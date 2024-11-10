@@ -24,13 +24,17 @@ Finalmente, esto se ve representado en el siguiente diagrama de arquitectura de 
 # Parte 2: Aplicaciones y flujo CI/CD
 
 ## API HTTP
-- Se creó un handler simple de Lambda que expone dos endpoints. Un endpoint GET el que consultará la base de datos y devolverá las rows de una tabla en formato JSON
+- Se creó un handler simple de Lambda que expone dos endpoints. Un endpoint GET el que consultará la base de datos y devolverá las rows de una tabla en formato JSON y un endpoint POST que publicará un mensaje en el tópico SNS.
+- 
 
 ## Deploy
 - Se creó workflow de Github Actions que hace deploy de la función Lambda a una cuenta AWS cuyos parámetros se definen en secrets de Github.
+- Ambos scripts son de ejecución manual.
 
 ## Ingesta a BBDD
-- Se creó método POST que ingesta directamente a la base de datos.
+- Se utilizará una suscripción a SNS a una función Lambda que insertará el mensaje en la base de datos.
+- Se dejó un snippet simple de función lambda en la carpeta `app-suscriptor` que se utilizaría para insertar datos en la base de datos.
+- Se dejó código terraform para desplegar la suscripción al tópico SNS que invocará esta función Lambda en `infraestructura/lambda-sub.tf`.
 
 ## Diagrama de arquitectura.
 - El diagrama general fue explicado en la parte 1 de este README.

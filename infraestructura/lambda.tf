@@ -26,7 +26,7 @@ resource "aws_iam_role_policy_attachment" "lambda_execution_policy" {
 resource "aws_lambda_function" "docker_lambda" {
   function_name = "docker_lambda_function"
   role          = aws_iam_role.lambda_execution_role.arn
-  image_uri = var.docker_image
+  image_uri = var.docker_image_pub
   package_type = "Image"
   environment {
     variables = {
