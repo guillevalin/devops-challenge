@@ -8,8 +8,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out the code
-        uses: actions/checkout@v3
+      - name: Clone repository
+        run: |
+          git clone https://github.com/guillevalin/devops-challenge.git
+          cd devops-challenge
 
       - name: Set up Docker Buildx
         run: |
