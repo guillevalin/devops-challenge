@@ -24,7 +24,7 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           LAMBDA_IMAGE_TAG: "latest"
         run: |
-          cd app-getandpublish
+          cd devops-challenge/app-getandpublish
           echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
           docker build -t $DOCKER_REPO:$LAMBDA_IMAGE_TAG .
           docker push $DOCKER_REPO:$LAMBDA_IMAGE_TAG
