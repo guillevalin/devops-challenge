@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "us-east-1"
-}
-
 # Crear la VPC con un bloque CIDR /16
 resource "aws_vpc" "main_vpc" {
   cidr_block           = "10.0.0.0/16"
@@ -24,7 +20,6 @@ resource "aws_internet_gateway" "igw" {
 
 # Crear un Elastic IP para el NAT Gateway
 resource "aws_eip" "nat_eip" {
-  vpc = true
 }
 
 # Crear una subnet pública en us-east-1a
