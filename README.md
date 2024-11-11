@@ -53,12 +53,36 @@ Si bien es una solución muy simple, podría servir a modo de PoC o MVP de cómo
 # Parte 3: Pruebas de Integración
 
 ## Implementar flujo de CI/CD que verifique que la API opera correctamente.
+Se implementó un script de CI/CD que de manera rudimentaria ejecuta la función lambda con AWS CLI y compara el status code de retorno para definir si la prueba es exitosa o no. En caso de ser una prueba fallida, el workflow termina con error.
+
+Buscando en la literatura se podrían utilizar otros mecanismos de pruebas de integración para API's, creo que una muy conveniente es utilizar Postman para escribir las pruebas, para luego exportar el script y utilizarlo en un workflow de Github Actions, tal como muestra el siguiente [artículo de Medium](https://medium.com/weekly-webtips/using-github-actions-for-integration-testing-on-a-rest-api-358991d54a20).
+
+Otra herramienta que he utilizado para realizar tests e2e es Cypress, donde también se puede instrumentar un frontend para realizar pruebas, así como también una API.
 
 ## Proponer otras pruebas de integración.
+Algunas pruebas adicionales que podríamos considerar para la función lambda que expone el GET y publica en el tópico SNS son:
+- Probar que la función lambda pueda conectarse a AWS SNS.
+- Probar que se pueda publicar en el tópico SNS definido un mensaje de manera exitosa.
+- Probar conexión a la base de datos Aurora.
+- Probar lectura de datos desde la BBDD Aurora.
+
+En el caso de la función lambda que se suscribe al tópico SNS:
+- Conexión a la base de datos Aurora.
+- Recepción de mensaje de SNS.
+- Escritura del mensaje SNS en la base de datos Aurora.
 
 ## Identificar puntos críticos del sistema
+Algunos puntos débiles de la solución que podrían afectar al rendimiento son:
+- Cold starts de AWS Lambda.
+- Debemos asegurar que los mensajes se escriban en el tópico SNS de manera exitosa, así como también su lectura y escritura en la BBDD Aurora por parte del suscriptor.
+- A nivel de rendimiento ahora estamos considerando un SELECT simple, sin embargo a medida que vamos sofisticando el sistema probablemente vamos a querer realizar endpoints que realizan queries más avanzadas, donde entran a considerarse factores como sizing correcto de la base de datos, índices adecuados para las consultas a realizar, también se podría utilizar una estructura de caching para el/los endpoints dependiendo de la frecuencia de actualización de los datos lo que también podría optimizar la API así como también quitar carga de la base de datos.
 
 ## Cómo robustecer la solución
+Si pasamos de un MVP a una solución más production ready consideraría algunos cambios de arquitectura tales como:
+- Pasar de funciones lambda a contenedores Docker desplegados en ECS o EKS, donde podremos también utilizar estrategias de escalado horizontal y vertical, además de poder asegurar alta disponibilidad desplegando más de un contenedor en más de una zona de disponibilidad o incluso en distintas regiones.
+- Implementar escalamiento horizontal de lecturas de Aurora con réplicas de lectura dependiendo de la demanda.
+- Realizar un buen trabajo de diseño de la base de datos para entender cómo los usuarios interactuarán con el modelo de datos, para así implementar índices correctos y una estructura de tablas que sea eficiente para almacenar y consultarlos.
+- Implementar un cache de Redis para la API de visualización de datos, invalidando el caché si se realizan nuevas escrituras.
 
 # Parte 4: Métricas y Monitoreo
 
