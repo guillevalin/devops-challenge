@@ -17,29 +17,27 @@ jobs:
         run: |
           docker buildx create --use
 
-      - name: Build and push Docker image
-        env:
-          DOCKER_REPO: guillevalin/app-suscriptor
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          LAMBDA_IMAGE_TAG: "latest"
-        run: |
-          cd devops-challenge/app-suscriptor
-          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-          docker build -t $DOCKER_REPO:$LAMBDA_IMAGE_TAG .
-          docker push $DOCKER_REPO:$LAMBDA_IMAGE_TAG
-
       - name: Configure AWS CLI
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set region us-east-1
 
+      - name: Build and push Docker image
+        env:
+          DOCKER_REPO: 296062555964.dkr.ecr.us-east-1.amazonaws.com/app-suscriptor
+          LAMBDA_IMAGE_TAG: "latest"
+        run: |
+          cd devops-challenge/app-suscriptor
+          aws ecr get-login-password --region us-east-1 | docker login -u AWS --password-stdin 296062555964.dkr.ecr.us-east-1.amazonaws.com
+          docker build -t $DOCKER_REPO:$LAMBDA_IMAGE_TAG .
+          docker push $DOCKER_REPO:$LAMBDA_IMAGE_TAG
+
       - name: Deploy to AWS Lambda
         env:
           LAMBDA_FUNCTION_NAME: "app-suscriptor"
           LAMBDA_ROLE: ${{ secrets.LAMBDA_ROLE }}
-          DOCKER_REPO_URI: "guillevalin/app-suscriptor:latest"
+          DOCKER_REPO_URI: "296062555964.dkr.ecr.us-east-1.amazonaws.com/app-suscriptor:latest"
         run: |
           aws lambda create-function \
             --function-name $LAMBDA_FUNCTION_NAME \
