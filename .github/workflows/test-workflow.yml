@@ -20,7 +20,7 @@ jobs:
 
           # Prueba método GET. Debe retornar un status code 200.
           echo "Invoking GET method"
-          RESPONSE_GET=$(aws lambda invoke --function-name $LAMBDA_FUNCTION_NAME --payload '{}' response_get.json)
+          RESPONSE_GET=$(aws lambda invoke --function-name $LAMBDA_FUNCTION_NAME response_get.json)
           GET_STATUS_CODE=$(cat response_get.json | jq -r '.statusCode')
           if [[ "$GET_STATUS_CODE" -eq 200 ]]; then
             echo "GET test passed"
