@@ -87,14 +87,40 @@ Si pasamos de un MVP a una solución más production ready consideraría algunos
 # Parte 4: Métricas y Monitoreo
 
 ## Proponer 3 métricas para entender la salud y rendimiento.
+Además de las métricas evidentes que mencionan (CPU/RAM/Disco). Algunas métricas de interés pueden ser:
+- Latencia de la API (ms por request, observando P50, P95 y P99).
+- % de llamadas HTTP fallidas (que no devolvieron 200/201)
+- Throughput de la API (transacciones por minuto).
 
 ## Proponer una herramienta de observabilidad
+Existen diversas herramientas de observabilidad, y dentro del mundo enterprise pueden ser más conocidas herramientas como Datadog, New Relic o Dynatrace entre otras. También los mismos proveedores de la nube proveen opciones nativas de observabilidad, cómo AWS Cloudwatch/Eventbridge/Cloudtrail:
+![AWS Observability](aws-observability.png)
+
+Sin embargo, como en el mundo startup se suele tener mucho menos presupuesto y hay que buscar soluciones ingeniosas como poco dinero, suelo preferir dos herramientas opensource para la observabilidad:
+- [Prometheus/Grafana](https://grafana.com/): Prometheus permite monitorear diversas métricas las cuales son almacenads en una base de datos timeseries (TSDB), las cuales pueden ser visualizadas mediante Grafana. Desde el punto de vista de las alertas, se pueden configurar reglas en "Alertmanager" las cuales luego son notificadas a distintos receptores, como e-mail o alguna herramienta de soporte 24/7 como PagerDuty. En lo personal creo que es más cómodo configurar las reglas de alertas en Grafana dado que tiene una interfaz gráfica más amigable.
+![Prometheus Architecture](prometheus.png)
+- [Elastic Observability](https://www.elastic.co/observability): Elastic permite monitorear logs de diversas fuentes. En el caso de EKS suelo utilizar Filebeat para registrar los logs de las aplicaciones de interés mediante un annotation en el recurso. Para el caso de AWS Lambda existe también [Elastic Serverless Forwarder for AWS](https://www.elastic.co/guide/en/esf/current/aws-elastic-serverless-forwarder.html), el cual permitiría también tener los logs de las funciones en Elastic. Sin embargo, una de las funciones que más me gusta de Elastic para la observabilidad es su APM (Application Performance Monitoring) el cual instalando una biblioteca en el deployment (soporta varios lenguajes), permite enviar información de rendimiento a Elastic, además de poder correlacionar logs con eventos y errores.
 
 ## Describe como sería la implementación de esta heramienta en la nube
+Considerando un supuesto de un entorno Kubernetes, utilizaría los Helm Charts tanto de Elastic como de Prometheus/Grafana, los cuales se encuentran disponibles en los siguientes sitios:
+- https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-deploy-eck.html
+- https://github.com/grafana/helm-charts
+
+Para ambas herramientas existen soluciones Cloud Managed lo que sería más sencilla su implementación, y luego lo que se necesitaría sería implementar el agente de Grafana en el cluster EKS para colectar métricas de los nodos y contenedores, así como también desplegar el agente de Filebeat para recolectar los logs de los contenedores. En el caso del APM se despliega una biblioteca en cada uno de los servicios que envía las métricas a un servidor de APM (ya sea self hosted o en la opción Elastic Cloud).
 
 ## Escalabilidad de la solución propuesta
+Para el caso de Prometheus/Grafana si usamos una solución self hosted probablemente habría que escalar horizontalmente los contenedores de Prometheus (TSDB) y Grafana (visualizador), pero desde el punto de vista de la visualización de métricas, si son sistemas homogeneos, se pueden parametrizar para visualizar de manera individual en Grafana de la siguiente manera:
+![Grafana Parameters](grafana-parameters.png)
+
+Además también se podrían generar gráficos generales que sólo muestren información relevante de sistemas que merecen nuestra atención (ej: que una métrica no cumpla el nivel de servicio que esperamos).
+
+En el caso de Elastic es muy intensivo en uso de CPU/RAM así como también de disco (para guardar logs), por ende si bien se puede partir por un nodo único que ejecute todas las funciones (master/data/analytics/etc), estructuras más maduras de elastic comienzan a separar los nodos por funciones además de escalar horizontalmente los nodos para desagregar la información (los índices se shardean en distintos servidores), y también para garantizar que no se pierda la información (se puede guardar el índice en más de un nodo). Más información en https://www.elastic.co/guide/en/elasticsearch/reference/8.15/scalability.html
 
 ## Dificultades o limitaciones de la observabilidad
+Algunas situaciones que he experimentado son evidentes:
+- Elastic se queda sin espacio en disco, por ende, quedamos sin observabilidad hasta solucionarlo.
+- El nodo se queda pequeño ante la demanda y por ende analizar la data se hace imposible.
+- Podemos implementar autoescalado de disco, pero sin una correcta lifecycle se hace costoso alojar toda la información, por ende es necesario tener buena política de rotación de logs.
 
 # Parte 5: Alertas y SRE
 
