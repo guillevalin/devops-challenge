@@ -1,0 +1,42 @@
+name: Pruebas de Integración
+
+on:
+    workflow_dispatch:
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS CLI
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region us-east-1
+
+      - name: Run integration tests for Lambda function
+        run: |
+          LAMBDA_FUNCTION_NAME="app-getandpublish"
+
+          # Prueba método GET. Debe retornar un status code 200.
+          echo "Invoking GET method"
+          RESPONSE_GET=$(aws lambda invoke --function-name $LAMBDA_FUNCTION_NAME --payload '{}' response_get.json)
+          GET_STATUS_CODE=$(cat response_get.json | jq -r '.statusCode')
+          if [[ "$GET_STATUS_CODE" -eq 200 ]]; then
+            echo "GET test passed"
+          else
+            echo "GET test failed with status code $GET_STATUS_CODE"
+            exit 1
+          fi
+
+          # Prueba del método POST. Debe retornar un status code 201.
+          echo "Invoking POST method"
+          POST_PAYLOAD='{ "name": "Juan Perez", "email": "juan.perez@latam.com" }'
+          RESPONSE_POST=$(aws lambda invoke --function-name $LAMBDA_FUNCTION_NAME --payload "$POST_PAYLOAD" response_post.json)
+          POST_STATUS_CODE=$(cat response_post.json | jq -r '.statusCode')
+          if [[ "$POST_STATUS_CODE" -eq 201 ]]; then
+            echo "POST test passed"
+          else
+            echo "POST test failed with status code $POST_STATUS_CODE"
+            exit 1
+          fi
