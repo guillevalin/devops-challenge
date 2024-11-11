@@ -125,5 +125,36 @@ Algunas situaciones que he experimentado son evidentes:
 # Parte 5: Alertas y SRE
 
 ## Reglas y/o umbrales
+- Latencia P50: Apuntar a <100 [ms]
+- Latencia P95: Apuntar a <300 [ms]
+- Latencia P99: Apunitar a <500 [ms]
+- Throughput: Medir comportamiento esperado y definir una banda de dos desviaciones estándar como umbral de alerta.
+- Transacciones fallidas: Si aumenta de 0% drásticamente significa que puede que tengamos un servicio caido o la API no esté aguantando el tráfico.
 
 ## SLI y SLO.
+
+### SLOs para Latencia:
+
+Latencia P50: El 95% de las solicitudes deben tener una latencia menor a 100 ms.
+- SLI: ≤ 100 ms.
+- SLO: El 95% de las solicitudes deben cumplir este objetivo.
+
+Latencia P95: El 99% de las solicitudes deben tener una latencia menor a 300 ms.
+- SLI: ≤ 300 ms.
+- SLO: El 99% de las solicitudes deben cumplir este objetivo.
+
+Latencia P99: El 99.9% de las solicitudes deben tener una latencia menor a 500 ms.
+- SLI: ≤ 500 ms.
+- SLO: El 99.9% de las solicitudes deben cumplir este objetivo.
+
+### SLO para Throughput:
+
+Throughput objetivo: Mantener el throughput dentro de la banda de dos desviaciones estándar. El objetivo puede ser que el 95% de las mediciones de throughput estén dentro del rango esperado de [400, 600] TPM.
+- SLI: Throughput dentro del rango [400, 600] TPM.
+- SLO: El 95% de las mediciones de throughput deben estar dentro de este rango.    
+
+### SLO para Transacciones Fallidas:
+
+Transacciones fallidas: La tasa de fallos debe ser 0% o cercano a 0% para el 99% de las solicitudes. Un aumento drástico en la tasa de fallos podría indicar un problema grave (como una caída del servicio o un mal manejo del tráfico).
+- SLI: Tasa de fallos = 0%.
+- SLO: La tasa de fallos debe ser menor al 1% en el 99% de las solicitudes. Si el 1% de las solicitudes fallan o más en un intervalo determinado (ej. 1 minuto), esto activaría una alerta para investigar posibles problemas en el servicio.
